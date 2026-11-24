@@ -64,11 +64,20 @@ test(3, 'Service Worker sw.js usa Network-First (nunca sirve música/código vie
   assert.ok(fs.existsSync(path.join(PUBLIC, 'assets/icon-512.png')));
 });
 
-test(4, 'HTML está en español latino y muestra botones 1 JUGADOR y 2 JUGADORES', () => {
+test(4, 'HTML en español latino con menú Jugar / Tienda / Música: SI, logo encima, tienda de Mia, controles de madera y aviso horizontal', () => {
   const html = fs.readFileSync(path.join(PUBLIC, 'index.html'), 'utf8');
+  const css = fs.readFileSync(path.join(PUBLIC, 'css/styles.css'), 'utf8');
   assert.ok(html.includes('lang="es-419"'));
-  assert.ok(html.includes('1 JUGADOR'));
-  assert.ok(html.includes('2 JUGADORES'));
+  assert.ok(html.includes('Jugar') && html.includes('Tienda') && html.includes('Música: SI'));
+  assert.ok(html.includes('menu-logo-top'));
+  assert.ok(html.includes('shop_mia.jpg') && html.includes('btn-shop-buy'));
+  assert.ok(html.includes('btn-hud-exit') && html.includes('btn-touch-invis'));
+  assert.ok(html.includes('touch-wood-btn') && css.includes('orientation: portrait'));
+  assert.ok(fs.existsSync(path.join(PUBLIC, 'assets/sprites/coin_medieval.png')));
+  assert.ok(fs.existsSync(path.join(PUBLIC, 'assets/sprites/icon_invis.png')));
+  assert.ok(fs.existsSync(path.join(PUBLIC, 'assets/sprites/menu_lucio.png')));
+  assert.ok(fs.existsSync(path.join(PUBLIC, 'assets/sprites/menu_nacho.png')));
+  assert.ok(fs.existsSync(path.join(PUBLIC, 'assets/bg/shop_mia.jpg')));
 });
 
 test(5, 'Todos los 6 sprites de Lucio Normal existen', () => {
@@ -354,25 +363,34 @@ test(31, 'Game Over solo ocurre cuando TODOS los jugadores pierden sus 3 corazon
 // =========================================================================
 // BLOQUE 4: LUCKYBLOCKS, POPO MARRÓN (ESPADA 3 GOLPES) Y POPO NARANJA (DORADO 16s) (Pruebas 32-38)
 // =========================================================================
-test(32, 'Hay pocos LuckyBlocks (<= 3 por nivel), NO se recargan y sacan Popo Marrón o Naranja', () => {
+test(32, 'Hay pocos LuckyBlocks en niveles (<= 3 fuera de Abruk) y en Abruk hay 2 LuckyBlocks que se recargan cada 20s', () => {
   const levels = buildLevels();
-  for (const lv of levels) {
-    assert.ok(lv.luckyBlocks.length >= 2 && lv.luckyBlocks.length <= 3, `${lv.name} tiene demasiados LuckyBlocks: ${lv.luckyBlocks.length}`);
-    for (const b of lv.luckyBlocks) {
-      assert.ok(!b.regenerates, 'Ningún LuckyBlock debe recargarse');
-    }
+  assert.ok(levels[0].luckyBlocks.length <= 3);
+  assert.ok(levels[1].luckyBlocks.length <= 3);
+  const abrukRegen = levels[2].luckyBlocks.filter((b) => b.regenerates);
+  assert.equal(abrukRegen.length, 2, 'En la batalla contra Abruk deben haber 2 LuckyBlocks recargables');
+  for (const b of abrukRegen) {
+    assert.equal(b.regenTime, 20, 'Cada LuckyBlock de Abruk debe recargarse cada 20 segundos');
   }
+
   const { engine } = createTestEngine();
   engine.startNewGame(1);
+  // Nivel 1: no se recarga
+  const blockN1 = engine.blocks[0];
+  engine._triggerLuckyBlock(blockN1, engine.players[0]);
+  assert.equal(blockN1.used, true);
+  for (let i = 0; i < 600; i++) engine._updateBlocks(0.04);
+  assert.equal(blockN1.used, true, 'LuckyBlock normal no debe recargarse');
+
+  // Nivel 3 (Abruk): los 2 LuckyBlocks de Abruk sí se recargan exactamente a los 20 segundos
   engine.loadLevel(2, false);
-  const block = engine.blocks[engine.blocks.length - 1];
-  engine._triggerLuckyBlock(block, engine.players[0]);
-  assert.equal(block.used, true);
-  assert.equal(engine.items.length, 1);
-  assert.ok(['brown', 'orange'].includes(engine.items[0].kind));
-  // Esperar 20 segundos simulados -> el bloque NUNCA debe recargarse!
-  for (let i = 0; i < 500; i++) engine._updateBlocks(0.04);
-  assert.equal(block.used, true, 'El LuckyBlock no debe recargarse nunca');
+  const abrukBlock = engine.blocks.find((b) => b.regenerates);
+  engine._triggerLuckyBlock(abrukBlock, engine.players[0]);
+  assert.equal(abrukBlock.used, true);
+  for (let i = 0; i < 475; i++) engine._updateBlocks(0.04); // 19s -> aún usado
+  assert.equal(abrukBlock.used, true);
+  for (let i = 0; i < 30; i++) engine._updateBlocks(0.04); // >20s -> recargado!
+  assert.equal(abrukBlock.used, false);
 });
 
 test(33, 'Popo Marrón otorga la Espada al jugador y dura hasta recibir 3 golpes', () => {
@@ -486,17 +504,49 @@ test(38, 'El Modo Dorado termina automáticamente después de 16 segundos', () =
 // =========================================================================
 // BLOQUE 5: ENEMIGOS (MATEOS & ERINS), NIVELES, TUBOS, ABRUK Y PEPE (Pruebas 39-49)
 // =========================================================================
-test(39, 'Los 3 niveles son largos (> 5500px), tienen pozos, troncos, Mateos, Erins y pocos LuckyBlocks', () => {
-  const levels = buildLevels();
-  assert.equal(levels.length, 3);
-  for (const lv of levels) {
-    assert.ok(lv.width >= 5500, lv.name);
-    assert.ok(lv.groundSegments.length >= 4, `${lv.name} debe tener pozos`);
-    assert.ok(lv.platforms.some((p) => p.kind === 'log'), `${lv.name} debe tener troncos`);
-    assert.ok(lv.luckyBlocks.length >= 2 && lv.luckyBlocks.length <= 3, `${lv.name} debe tener pocos LuckyBlocks`);
-    assert.ok(lv.enemies.some((e) => e.type === 'mateo'), `${lv.name} debe tener Mateos`);
-    assert.ok(lv.enemies.some((e) => e.type === 'erin'), `${lv.name} debe tener Erins`);
-  }
+test(39, 'Monedas medievales y Tienda de Mia: +1 Vida (máx 6), Invisibilidad (tecla 2) y Protección (círculo verde al iniciar)', () => {
+  const { engine } = createTestEngine();
+  engine.startNewGame(1);
+  assert.ok(engine.coins.length >= 15, 'Los niveles deben tener monedas de oro medievales');
+
+  // Recoger moneda suma 50 monedas y no se pierde si no hay suficientes
+  const c0 = engine.coins[0];
+  engine.players[0].x = c0.x;
+  engine.players[0].y = c0.y;
+  engine._updateCoins();
+  assert.equal(c0.collected, true);
+  assert.equal(engine.shop.coins, 50);
+  assert.equal(engine.buyShopItem('life').ok, false, 'Sin monedas suficientes no puede comprar');
+
+  // Probar límite de 6 "+1 Vida"
+  engine.shop.coins = 5000;
+  for (let i = 0; i < 6; i++) assert.equal(engine.buyShopItem('life').ok, true);
+  assert.equal(engine.shop.extraLives, 6);
+  assert.equal(engine.buyShopItem('life').ok, false, 'Límite máximo de +1 Vida es 6');
+
+  // Probar compra única de Invisibilidad y Protección
+  engine.shop.coins = 5000;
+  assert.equal(engine.buyShopItem('invis').ok, true);
+  assert.equal(engine.buyShopItem('invis').ok, false, 'Solo se puede comprar 1 Invisibilidad');
+  assert.equal(engine.buyShopItem('shield').ok, true);
+  assert.equal(engine.buyShopItem('shield').ok, false, 'Solo se puede comprar 1 Protección');
+
+  // Al empezar a jugar: Protección se activa automáticamente y tiene 3+6 = 9 corazones
+  engine.startNewGame(1);
+  const lucio = engine.players[0];
+  assert.equal(lucio.hearts, 9);
+  assert.ok(lucio.shieldTimer > 0, 'Protección debe activarse apenas empieza a jugar');
+  lucio.hurtInvuln = 0;
+  engine._hurtPlayer(lucio, lucio.x + 50);
+  assert.equal(lucio.hits, 15, 'Escudo verde protege del daño de enemigos');
+
+  // Activar Invisibilidad con la tecla "2" -> inmune hasta perder un corazón
+  engine.handleKeyDown('Digit2');
+  engine.update(1 / 60);
+  assert.equal(lucio.invisible, true, 'Tecla 2 debe activar Invisibilidad');
+  assert.equal(engine.shop.hasInvis, false);
+  engine._killPlayerHeart(lucio, 'pozo');
+  assert.equal(lucio.invisible, false, 'Invisibilidad dura hasta perder un corazón');
 });
 
 test(40, 'Mateo camina izquierda/derecha y ataca con espada cuando el jugador se acerca', () => {

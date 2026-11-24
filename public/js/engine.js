@@ -2,8 +2,33 @@ import { buildLevels, VIEW_W, VIEW_H, GROUND_Y } from './levels.js?v=6';
 
 const MAX_HITS_PER_HEART = 15;
 const START_HEARTS = 3;
+const MAX_EXTRA_LIVES = 6;
+const COIN_VALUE = 50;
+const SHIELD_DURATION = 20.0;
 const GOLD_DURATION = 16.0;
 const SWORD_DURABILITY = 3;
+const STORAGE_KEY = 'primosRaggi_save_v1';
+
+export const SHOP_ITEMS = {
+  life: {
+    id: 'life',
+    name: '+1 Vida',
+    price: 500,
+    desc: '+1 Vida: Un corazón extra para tener más oportunidades de vivir mientras juegas',
+  },
+  invis: {
+    id: 'invis',
+    name: 'Invisibilidad',
+    price: 1000,
+    desc: 'Invisibilidad: Personaje invisible sin que los enemigos lo puedan atacar, dura hasta perder un corazón',
+  },
+  shield: {
+    id: 'shield',
+    name: 'Protección',
+    price: 2000,
+    desc: 'Protección: Escudo protector para no recibir daño de los enemigos, temporalmente',
+  },
+};
 
 function aabb(a, b) {
   return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
@@ -35,6 +60,7 @@ export class GameEngine {
 
     this.players = [];
     this.blocks = [];
+    this.coins = [];
     this.items = [];
     this.enemies = [];
     this.meteorites = [];
@@ -53,7 +79,66 @@ export class GameEngine {
     this.pipeAnimTimer = 0;
     this.lastLuckyToggle = Math.random() < 0.5;
 
+    // Estado persistente de monedas e inventario de la Tienda de Mia
+    this.shop = this._loadShopState();
+
     this._initAmbient();
+  }
+
+  _loadShopState() {
+    const defaults = { coins: 0, extraLives: 0, hasInvis: false, hasShield: false };
+    try {
+      if (typeof localStorage !== 'undefined') {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          return {
+            coins: Math.max(0, Number(parsed.coins) || 0),
+            extraLives: clamp(Number(parsed.extraLives) || 0, 0, MAX_EXTRA_LIVES),
+            hasInvis: !!parsed.hasInvis,
+            hasShield: !!parsed.hasShield,
+          };
+        }
+      }
+    } catch {}
+    return defaults;
+  }
+
+  _saveShopState() {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(this.shop));
+      }
+    } catch {}
+  }
+
+  buyShopItem(itemId) {
+    const item = SHOP_ITEMS[itemId];
+    if (!item) return { ok: false, reason: 'Objeto inválido' };
+    if (this.shop.coins < item.price) {
+      return { ok: false, reason: 'No tienes suficientes monedas' };
+    }
+    if (itemId === 'life') {
+      if (this.shop.extraLives >= MAX_EXTRA_LIVES) {
+        return { ok: false, reason: 'Ya tienes el máximo de 6 vidas extra' };
+      }
+      this.shop.coins -= item.price;
+      this.shop.extraLives += 1;
+    } else if (itemId === 'invis') {
+      if (this.shop.hasInvis) {
+        return { ok: false, reason: 'Ya compraste Invisibilidad' };
+      }
+      this.shop.coins -= item.price;
+      this.shop.hasInvis = true;
+    } else if (itemId === 'shield') {
+      if (this.shop.hasShield) {
+        return { ok: false, reason: 'Ya compraste Protección' };
+      }
+      this.shop.coins -= item.price;
+      this.shop.hasShield = true;
+    }
+    this._saveShopState();
+    return { ok: true };
   }
 
   _initAmbient() {
@@ -90,17 +175,24 @@ export class GameEngine {
     this.mode = mode;
     this.levels = buildLevels();
     this.levelIndex = 0;
-    this.players = this._createInitialPlayers(mode);
+    const totalHearts = START_HEARTS + (this.shop.extraLives || 0);
+    const startWithShield = !!this.shop.hasShield;
+    if (startWithShield) {
+      this.shop.hasShield = false;
+      this._saveShopState();
+    }
+    this.players = this._createInitialPlayers(mode, totalHearts, startWithShield);
     this.loadLevel(0, true);
   }
 
   restartCurrentLevel() {
     // Restaurar vidas y resistencia al reintentar el nivel
-    this.players = this._createInitialPlayers(this.mode);
+    const totalHearts = START_HEARTS + (this.shop.extraLives || 0);
+    this.players = this._createInitialPlayers(this.mode, totalHearts, false);
     this.loadLevel(this.levelIndex, true);
   }
 
-  _createInitialPlayers(mode) {
+  _createInitialPlayers(mode, totalHearts = START_HEARTS, startWithShield = false) {
     const lucio = {
       id: 1,
       name: 'Lucio',
@@ -121,7 +213,8 @@ export class GameEngine {
       crouching: false,
       coyoteTimer: 0,
       jumpBuffer: 0,
-      hearts: START_HEARTS,
+      hearts: totalHearts,
+      maxHearts: totalHearts,
       hits: MAX_HITS_PER_HEART,
       maxHits: MAX_HITS_PER_HEART,
       alive: true,
@@ -131,6 +224,8 @@ export class GameEngine {
       power: 'none', // 'none' | 'sword' | 'gold'
       swordHits: 0,
       goldTimer: 0,
+      invisible: false,
+      shieldTimer: startWithShield ? SHIELD_DURATION : 0,
       attackTimer: 0,
       attackCooldown: 0,
       squashX: 1,
@@ -173,7 +268,8 @@ export class GameEngine {
         crouching: false,
         coyoteTimer: 0,
         jumpBuffer: 0,
-        hearts: START_HEARTS,
+        hearts: totalHearts,
+        maxHearts: totalHearts,
         hits: MAX_HITS_PER_HEART,
         maxHits: MAX_HITS_PER_HEART,
         alive: true,
@@ -183,6 +279,8 @@ export class GameEngine {
         power: 'none',
         swordHits: 0,
         goldTimer: 0,
+        invisible: false,
+        shieldTimer: startWithShield ? SHIELD_DURATION : 0,
         attackTimer: 0,
         attackCooldown: 0,
         squashX: 1,
@@ -238,7 +336,7 @@ export class GameEngine {
       p.warpCooldown = 0;
     });
 
-    // LuckyBlocks (NO se recargan una vez abiertos)
+    // LuckyBlocks (en Abruk se recargan cada 20s si tienen regenerates: true)
     this.blocks = this.level.luckyBlocks.map((b, i) => ({
       id: i,
       x: b.x,
@@ -249,6 +347,19 @@ export class GameEngine {
       used: false,
       bumpOffset: 0,
       bumpVel: 0,
+      regenerates: !!b.regenerates,
+      regenTime: b.regenTime || 20,
+      regenTimer: 0,
+    }));
+
+    // Monedas de oro medievales recolectables
+    this.coins = (this.level.coins || []).map((c, i) => ({
+      id: i,
+      x: c.x,
+      y: c.y,
+      w: 34,
+      h: 34,
+      collected: false,
     }));
 
     // Enemigos
@@ -403,10 +514,18 @@ export class GameEngine {
     const desiredTrack = this.bossActive && !this.bossDefeated ? 'boss' : 'main';
     this.sound.playMusic(desiredTrack);
 
+    // Activar Invisibilidad comprada en tienda con tecla "2"
+    if (this._isJustPressed(['Digit2', 'Numpad2'])) {
+      this.activateInvisibility();
+    }
+
     // Actualizar jugadores
     for (const p of this.players) {
       this._updatePlayer(p, dt);
     }
+
+    // Actualizar monedas medievales
+    this._updateCoins();
 
     // Actualizar bloques LuckyBlock
     this._updateBlocks(dt);
@@ -505,6 +624,44 @@ export class GameEngine {
     return solids;
   }
 
+  activateInvisibility() {
+    if (!this.shop.hasInvis) return false;
+    const anyLiving = this.players.some((p) => p.alive && !p.eliminated);
+    if (!anyLiving) return false;
+
+    this.shop.hasInvis = false;
+    this._saveShopState();
+    this.sound.sfxPowerUp(true);
+    for (const p of this.players) {
+      if (p.alive && !p.eliminated) {
+        p.invisible = true;
+        this._burstParticles(p.x + p.w / 2, p.y + p.h / 2, '#5ce1ff', 16);
+        this._addFloatingText(p.x + p.w / 2, p.y - 12, '🧪 ¡INVISIBLE!', '#7cebff');
+      }
+    }
+    if (this.cb.onToast) {
+      this.cb.onToast('🧪 ¡Invisibilidad activada! Los enemigos no pueden atacarte hasta perder un corazón.', 3000);
+    }
+    return true;
+  }
+
+  _updateCoins() {
+    for (const c of this.coins) {
+      if (c.collected) continue;
+      for (const p of this.players) {
+        if (!p.alive || p.eliminated) continue;
+        if (aabb(p, c)) {
+          c.collected = true;
+          this.shop.coins += COIN_VALUE;
+          this._saveShopState();
+          this.sound.sfxLuckyBlock();
+          this._burstParticles(c.x + c.w / 2, c.y + c.h / 2, '#ffe047', 10);
+          this._addFloatingText(c.x + c.w / 2, c.y - 8, `+${COIN_VALUE} 🪙`, '#ffe564');
+          break;
+        }
+      }
+    }
+  }
   getPhysics(isUnderwater) {
     if (isUnderwater) {
       return {
@@ -588,6 +745,7 @@ export class GameEngine {
 
     p.animTime += dt;
     if (p.hurtInvuln > 0) p.hurtInvuln = Math.max(0, p.hurtInvuln - dt);
+    if (p.shieldTimer > 0) p.shieldTimer = Math.max(0, p.shieldTimer - dt);
     if (p.warpCooldown > 0) p.warpCooldown = Math.max(0, p.warpCooldown - dt);
     if (p.attackTimer > 0) p.attackTimer = Math.max(0, p.attackTimer - dt);
     if (p.attackCooldown > 0) p.attackCooldown = Math.max(0, p.attackCooldown - dt);
@@ -916,6 +1074,9 @@ export class GameEngine {
     if (block.used) return;
     block.used = true;
     block.bumpVel = -240;
+    if (block.regenerates) {
+      block.regenTimer = block.regenTime || 20;
+    }
     this.sound.sfxLuckyBlock();
     this._burstParticles(block.x + block.w / 2, block.y + block.h / 2, '#ffe078', 12);
 
@@ -952,6 +1113,13 @@ export class GameEngine {
         if (b.bumpOffset > 0) {
           b.bumpOffset = 0;
           b.bumpVel = 0;
+        }
+      }
+      if (b.used && b.regenerates) {
+        b.regenTimer -= dt;
+        if (b.regenTimer <= 0) {
+          b.used = false;
+          this._burstParticles(b.x + b.w / 2, b.y + b.h / 2, '#fff0a0', 10);
         }
       }
     }
@@ -1404,9 +1572,12 @@ export class GameEngine {
 
   _hurtPlayer(p, sourceX) {
     if (!p.alive || p.eliminated || p.warpAnim) return;
-    // MODO DORADO: ¡Inmune al dolor!
+    // MODO DORADO, INVISIBILIDAD o ESCUDO DE PROTECCIÓN: ¡No reciben daño de enemigos!
     if (p.power === 'gold') {
       this._burstParticles(p.x + p.w / 2, p.y + p.h / 2, '#fff078', 6);
+      return;
+    }
+    if (p.invisible || p.shieldTimer > 0) {
       return;
     }
     if (p.hurtInvuln > 0) return;
@@ -1444,9 +1615,16 @@ export class GameEngine {
     p.alive = false;
     p.hearts -= 1;
     p.power = 'none';
+    p.invisible = false;
+    p.shieldTimer = 0;
     p.swordHits = 0;
     p.goldTimer = 0;
     p.hits = 0;
+    if (p.hearts < START_HEARTS + this.shop.extraLives && this.shop.extraLives > 0) {
+      // Si pierde un corazón de los extra comprados, puede volver a comprar hasta el límite de 6
+      this.shop.extraLives = Math.max(0, Math.min(this.shop.extraLives, p.hearts - START_HEARTS));
+      this._saveShopState();
+    }
     this.sound.sfxLoseHeart();
     this.shakeTimer = 0.25;
     this.shakeIntensity = 7;
@@ -1566,7 +1744,7 @@ export class GameEngine {
     let best = null;
     let bestD = maxDist;
     for (const p of this.players) {
-      if (!p.alive || p.eliminated) continue;
+      if (!p.alive || p.eliminated || p.invisible) continue;
       const d = Math.hypot((p.x + p.w / 2) - x, (p.y + p.h / 2) - y);
       if (d < bestD) {
         bestD = d;
@@ -1645,6 +1823,8 @@ export class GameEngine {
       mode: this.mode,
       levelName: this.level.name,
       progress,
+      coins: this.shop.coins,
+      hasInvis: this.shop.hasInvis,
       players: this.players,
       boss: this.bossActive && this.boss ? this.boss : null,
     });

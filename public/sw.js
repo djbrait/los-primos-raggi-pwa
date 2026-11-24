@@ -1,4 +1,4 @@
-const CACHE_NAME = 'primos-raggi-v6';
+const CACHE_NAME = 'primos-raggi-v7';
 const CORE_ASSETS = [
   './',
   './index.html',

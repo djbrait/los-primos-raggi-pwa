@@ -17,10 +17,11 @@ const SPRITE_LIST = [
   'mateo_walk', 'mateo_attack',
   'erin_fly', 'erin_attack', 'meteorite',
   'abruk_idle', 'abruk_run', 'abruk_jump', 'abruk_attack',
-  // Bloques, Objetos, Troncos/Tubos de madera y Pepe la Rana
+  // Bloques, Objetos, Troncos/Tubos de madera, Monedas, Iconos y Pepe la Rana
   'luckyblock', 'popo_brown', 'popo_orange',
   'wooden_pipe', 'trunk_1', 'trunk_2', 'trunk_3', 'trunk_4',
   'pepe', 'pepe_idle', 'pepe_jump',
+  'coin_medieval', 'icon_invis', 'menu_lucio', 'menu_nacho',
 ];
 
 const EXTRA_IMAGES = {
@@ -28,6 +29,7 @@ const EXTRA_IMAGES = {
   bg_forest: './assets/bg/level1_forest.jpg',
   bg_village: './assets/bg/level2_village.jpg',
   bg_underwater: './assets/bg/level3_underwater.jpg',
+  bg_shop: './assets/bg/shop_mia.jpg',
   ground_forest: './assets/bg/ground_forest.png',
   ground_village: './assets/bg/ground_village.png',
   ground_underwater: './assets/bg/ground_underwater.png',

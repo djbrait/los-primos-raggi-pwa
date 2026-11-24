@@ -84,8 +84,9 @@ export class GameRenderer {
       this._drawRescueArrow(ctx, level.bossArena.gateX + 40, engine.time);
     }
 
-    // 5. LuckyBlocks de madera con "?"
+    // 5. LuckyBlocks de madera con "?" y Monedas de oro medievales
     this._drawLuckyBlocks(ctx, engine.blocks, engine.time, camX);
+    this._drawCoins(ctx, engine.coins, engine.time, camX);
 
     // 6. Objetos Popo (Marrón / Naranja)
     this._drawItems(ctx, engine.items, engine.time);
@@ -421,6 +422,35 @@ export class GameRenderer {
     }
   }
 
+  _drawCoins(ctx, coins, time, camX) {
+    const img = this.assets.coin_medieval;
+    for (const c of coins) {
+      if (c.collected) continue;
+      if (c.x + c.w < camX - 60 || c.x > camX + VIEW_W + 60) continue;
+      const cx = c.x + c.w / 2;
+      const cy = c.y + c.h / 2 + Math.sin(time * 4.5 + c.id) * 4;
+      const spinScale = 0.55 + 0.45 * Math.abs(Math.cos(time * 3.8 + c.id * 0.7));
+
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.fillStyle = 'rgba(255, 224, 72, 0.24)';
+      ctx.beginPath();
+      ctx.arc(0, 0, 21, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.scale(spinScale, 1);
+      if (img) {
+        ctx.drawImage(img, -18, -18, 36, 36);
+      } else {
+        ctx.fillStyle = '#ffd43b';
+        ctx.beginPath();
+        ctx.arc(0, 0, 15, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+  }
+
   _drawItems(ctx, items, time) {
     for (const it of items) {
       const img = it.kind === 'brown' ? this.assets.popo_brown : this.assets.popo_orange;
@@ -638,7 +668,10 @@ export class GameRenderer {
       }
       ctx.translate(cx, bottomY);
 
-      if (p.hurtInvuln > 0 && Math.floor(engine.time * 20) % 2 === 0) {
+      // Invisibilidad: personaje más transparente (no del todo)
+      if (p.invisible) {
+        ctx.globalAlpha = 0.42;
+      } else if (p.hurtInvuln > 0 && Math.floor(engine.time * 20) % 2 === 0) {
         ctx.globalAlpha = 0.48;
       }
 
@@ -649,6 +682,21 @@ export class GameRenderer {
         ctx.beginPath();
         ctx.arc(0, -p.h * 0.52, p.renderHeight * 0.58, 0, Math.PI * 2);
         ctx.fill();
+      }
+
+      // Escudo de Protección: círculo verde alrededor del jugador
+      if (p.shieldTimer > 0) {
+        const blink = p.shieldTimer < 3.5 && Math.floor(engine.time * 12) % 2 === 0;
+        if (!blink) {
+          const rad = p.renderHeight * 0.62;
+          ctx.fillStyle = 'rgba(62, 230, 110, 0.18)';
+          ctx.strokeStyle = 'rgba(84, 255, 130, 0.92)';
+          ctx.lineWidth = 3.5;
+          ctx.beginPath();
+          ctx.arc(0, -p.h * 0.52, rad, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+        }
       }
 
       const sprite = this._pickPlayerSprite(p, engine.state);

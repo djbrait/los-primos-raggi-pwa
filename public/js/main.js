@@ -1,13 +1,15 @@
-import { loadAllAssets } from './assets.js?v=6';
-import { SoundManager } from './audio.js?v=6';
-import { GameEngine } from './engine.js?v=6';
-import { GameRenderer } from './renderer.js?v=6';
+import { loadAllAssets } from './assets.js?v=7';
+import { SoundManager } from './audio.js?v=7';
+import { GameEngine, SHOP_ITEMS } from './engine.js?v=7';
+import { GameRenderer } from './renderer.js?v=7';
 
 // Elementos del DOM
 const canvas = document.getElementById('game-canvas');
 const loadingOverlay = document.getElementById('loading-overlay');
 const loadingBarFill = document.getElementById('loading-bar-fill');
 const menuOverlay = document.getElementById('menu-overlay');
+const modeOverlay = document.getElementById('mode-overlay');
+const shopOverlay = document.getElementById('shop-overlay');
 const pauseOverlay = document.getElementById('pause-overlay');
 const gameoverOverlay = document.getElementById('gameover-overlay');
 const victoryOverlay = document.getElementById('victory-overlay');
@@ -16,6 +18,21 @@ const toastBanner = document.getElementById('toast-banner');
 const transitionCurtain = document.getElementById('transition-curtain');
 const transitionText = document.getElementById('transition-text');
 const touchControls = document.getElementById('touch-controls');
+const btnTouchInvis = document.getElementById('btn-touch-invis');
+
+// Menú y Tienda
+const menuCoinsEl = document.getElementById('menu-coins');
+const shopCoinsEl = document.getElementById('shop-coins');
+const badgeLife = document.getElementById('badge-life');
+const badgeInvis = document.getElementById('badge-invis');
+const badgeShield = document.getElementById('badge-shield');
+const shopDetailModal = document.getElementById('shop-detail-modal');
+const shopDetailTitle = document.getElementById('shop-detail-title');
+const shopDetailPriceText = document.getElementById('shop-detail-price-text');
+const shopDetailDesc = document.getElementById('shop-detail-desc');
+const shopDetailStatus = document.getElementById('shop-detail-status');
+const btnShopBuy = document.getElementById('btn-shop-buy');
+const btnShopDetailClose = document.getElementById('btn-shop-detail-close');
 
 // HUD refs
 const hudP1 = document.getElementById('hud-p1');
@@ -33,6 +50,7 @@ const hudP2HpText = document.getElementById('hud-p2-hp-text');
 const hudP2Power = document.getElementById('hud-p2-power');
 
 const hudLevelName = document.getElementById('hud-level-name');
+const hudCoins = document.getElementById('hud-coins');
 const hudProgressWrap = document.getElementById('hud-progress-wrap');
 const hudProgressFill = document.getElementById('hud-progress-fill');
 const hudBossWrap = document.getElementById('hud-boss-wrap');
@@ -41,11 +59,17 @@ const victoryNachoImg = document.getElementById('victory-nacho-img');
 const victoryMsg = document.getElementById('victory-msg');
 const gameoverMsg = document.getElementById('gameover-msg');
 
+// Botones
+const btnOpenPlay = document.getElementById('btn-open-play');
+const btnOpenShop = document.getElementById('btn-open-shop');
+const btnCloseMode = document.getElementById('btn-close-mode');
+const btnShopBack = document.getElementById('btn-shop-back');
 const btn1p = document.getElementById('btn-1p');
 const btn2p = document.getElementById('btn-2p');
 const btnMenuSound = document.getElementById('btn-menu-sound');
 const btnHudSound = document.getElementById('btn-hud-sound');
 const btnHudPause = document.getElementById('btn-hud-pause');
+const btnHudExit = document.getElementById('btn-hud-exit');
 const btnResume = document.getElementById('btn-resume');
 const btnRestartLevel = document.getElementById('btn-restart-level');
 const btnPauseMenu = document.getElementById('btn-pause-menu');
@@ -60,11 +84,12 @@ let engine = null;
 let renderer = null;
 let toastTimer = null;
 let deferredInstallPrompt = null;
+let selectedShopItemId = null;
 
-// Registrar Service Worker PWA (forzando actualización para evitar caché vieja)
+// Registrar Service Worker PWA
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js?v=6').then((reg) => {
+    navigator.serviceWorker.register('./sw.js?v=7').then((reg) => {
       reg.update().catch(() => {});
     }).catch(() => {});
   });
@@ -85,7 +110,7 @@ btnInstallPwa.addEventListener('click', async () => {
 });
 
 function showOverlay(target) {
-  [loadingOverlay, menuOverlay, pauseOverlay, gameoverOverlay, victoryOverlay].forEach((el) => {
+  [loadingOverlay, menuOverlay, modeOverlay, shopOverlay, pauseOverlay, gameoverOverlay, victoryOverlay].forEach((el) => {
     el.classList.toggle('active', el === target);
   });
 }
@@ -100,7 +125,6 @@ function showToast(message, durationMs = 2800) {
 }
 
 function runPipeTransition(titleText, onDarkCallback) {
-  // Deja ver la bajada por el tubo de madera 600ms, luego oscurece a negro y carga el siguiente nivel
   setTimeout(() => {
     transitionText.textContent = titleText;
     transitionCurtain.classList.add('dark');
@@ -131,20 +155,18 @@ function renderPlayerHud(p, cardEl, avatarEl, heartsEl, hpEl, hpTextEl, powerEl)
   const k = `p${p.id}`;
   cardEl.classList.toggle('eliminated', p.eliminated);
 
-  // Corazones (3 vidas)
   let hStr = '';
-  for (let i = 0; i < 3; i++) {
+  const totalHearts = p.maxHearts || 3;
+  for (let i = 0; i < totalHearts; i++) {
     hStr += i < p.hearts ? '❤️' : '🖤';
   }
   setTextIfChanged(`${k}_hearts`, heartsEl, hStr);
 
-  // Barra de 15 golpes por corazón
   const pct = p.eliminated ? 0 : Math.round(Math.max(0, Math.min(100, (p.hits / p.maxHits) * 100)));
   setStyleWidthIfChanged(`${k}_hpw`, hpEl, `${pct}%`);
   hpEl.classList.toggle('low', p.hits <= 5);
   setTextIfChanged(`${k}_hpt`, hpTextEl, p.eliminated ? 'Fuera' : `${p.hits}/${p.maxHits}`);
 
-  // Avatar acorde al estado (normal / espada / dorado)
   const avatarSrc = p.power === 'gold'
     ? `./assets/sprites/${p.spriteBase}_gold_idle.png`
     : p.power === 'sword'
@@ -155,7 +177,6 @@ function renderPlayerHud(p, cardEl, avatarEl, heartsEl, hpEl, hpTextEl, powerEl)
     avatarEl.src = avatarSrc;
   }
 
-  // Poder activo
   let pClass = 'power-badge hidden';
   let pText = '';
   if (p.eliminated) {
@@ -163,10 +184,16 @@ function renderPlayerHud(p, cardEl, avatarEl, heartsEl, hpEl, hpTextEl, powerEl)
     pText = '💔 Sin corazones';
   } else if (p.power === 'sword') {
     pClass = 'power-badge sword';
-    pText = `⚔️ Espada (${p.swordHits}/3 golpes)`;
+    pText = `⚔️ Espada (${p.swordHits}/3)`;
   } else if (p.power === 'gold') {
     pClass = 'power-badge gold';
     pText = `✨ Dorado · ${p.goldTimer.toFixed(1)}s`;
+  } else if (p.shieldTimer > 0) {
+    pClass = 'power-badge shield';
+    pText = `🛡️ Escudo · ${p.shieldTimer.toFixed(0)}s`;
+  } else if (p.invisible) {
+    pClass = 'power-badge invis';
+    pText = '🧪 Invisible';
   }
   if (hudCache[`${k}_pc`] !== pClass) {
     hudCache[`${k}_pc`] = pClass;
@@ -177,7 +204,13 @@ function renderPlayerHud(p, cardEl, avatarEl, heartsEl, hpEl, hpTextEl, powerEl)
 
 function updateHud(data) {
   setTextIfChanged('lvl', hudLevelName, data.levelName);
+  setTextIfChanged('coins', hudCoins, String(data.coins ?? 0));
   setStyleWidthIfChanged('prog', hudProgressFill, `${Math.round(data.progress * 100)}%`);
+
+  // Mostrar botón de botella en móvil SOLO si compró Invisibilidad y aún no la usó
+  if (btnTouchInvis) {
+    btnTouchInvis.classList.toggle('hidden', !data.hasInvis);
+  }
 
   if (data.players[0]) {
     renderPlayerHud(data.players[0], hudP1, hudP1Avatar, hudP1Hearts, hudP1Hp, hudP1HpText, hudP1Power);
@@ -189,7 +222,6 @@ function updateHud(data) {
     hudP2.classList.add('hidden');
   }
 
-  // Barra del Jefe Final Abruk
   if (data.boss && data.boss.alive) {
     hudBossWrap.classList.remove('hidden');
     hudProgressWrap.classList.add('hidden');
@@ -200,9 +232,70 @@ function updateHud(data) {
   }
 }
 
+function syncShopUI() {
+  if (!engine) return;
+  const s = engine.shop;
+  menuCoinsEl.textContent = String(s.coins);
+  shopCoinsEl.textContent = String(s.coins);
+  badgeLife.textContent = `${s.extraLives}/6`;
+  badgeInvis.classList.toggle('hidden', !s.hasInvis);
+  badgeShield.classList.toggle('hidden', !s.hasShield);
+
+  if (selectedShopItemId) {
+    openShopDetail(selectedShopItemId);
+  }
+}
+
+function openShopDetail(itemId) {
+  const item = SHOP_ITEMS[itemId];
+  if (!item || !engine) return;
+  selectedShopItemId = itemId;
+  const s = engine.shop;
+
+  shopDetailTitle.textContent = item.name;
+  shopDetailPriceText.textContent = String(item.price);
+  shopDetailDesc.textContent = item.desc;
+
+  let canBuy = s.coins >= item.price;
+  let statusTxt = '';
+  let btnLabel = `Comprar (${item.price} 🪙)`;
+
+  if (itemId === 'life') {
+    statusTxt = `Vidas extra actuales: ${s.extraLives} / 6`;
+    if (s.extraLives >= 6) {
+      canBuy = false;
+      btnLabel = 'Máximo alcanzado (6/6)';
+    } else if (s.coins < item.price) {
+      btnLabel = 'Monedas insuficientes';
+    }
+  } else if (itemId === 'invis') {
+    statusTxt = s.hasInvis ? '¡Ya tienes Invisibilidad lista! Actívala con la tecla 2.' : 'Disponible (máximo 1)';
+    if (s.hasInvis) {
+      canBuy = false;
+      btnLabel = 'Ya comprado';
+    } else if (s.coins < item.price) {
+      btnLabel = 'Monedas insuficientes';
+    }
+  } else if (itemId === 'shield') {
+    statusTxt = s.hasShield ? '¡Ya tienes Protección lista! Se activará al empezar a jugar.' : 'Disponible (máximo 1)';
+    if (s.hasShield) {
+      canBuy = false;
+      btnLabel = 'Ya comprado';
+    } else if (s.coins < item.price) {
+      btnLabel = 'Monedas insuficientes';
+    }
+  }
+
+  shopDetailStatus.textContent = statusTxt;
+  btnShopBuy.textContent = btnLabel;
+  btnShopBuy.disabled = !canBuy;
+  shopDetailModal.classList.remove('hidden');
+}
+
 function syncSoundButtons() {
   const on = !sound.muted;
-  btnMenuSound.textContent = on ? '🔊 Música: Sí' : '🔇 Música: No';
+  btnMenuSound.textContent = on ? 'Música: SI' : 'Música: NO';
+  btnMenuSound.classList.toggle('off', !on);
   btnHudSound.textContent = on ? '🔊' : '🔇';
 }
 
@@ -212,8 +305,9 @@ function goToMenu() {
   engine.clearInput();
   hud.classList.add('hidden');
   touchControls.classList.add('hidden');
+  syncShopUI();
   showOverlay(menuOverlay);
-  sound.playMusic('menu');
+  sound.playMusic('main');
 }
 
 function startMode(mode) {
@@ -239,7 +333,43 @@ function togglePause() {
   }
 }
 
-// Eventos de botones
+// Eventos Menú / Tienda / Modo
+btnOpenPlay.addEventListener('click', () => {
+  sound.unlock();
+  showOverlay(modeOverlay);
+});
+btnCloseMode.addEventListener('click', () => showOverlay(menuOverlay));
+
+btnOpenShop.addEventListener('click', () => {
+  sound.unlock();
+  selectedShopItemId = null;
+  shopDetailModal.classList.add('hidden');
+  syncShopUI();
+  showOverlay(shopOverlay);
+});
+btnShopBack.addEventListener('click', () => {
+  selectedShopItemId = null;
+  shopDetailModal.classList.add('hidden');
+  syncShopUI();
+  showOverlay(menuOverlay);
+});
+
+document.querySelectorAll('.shop-hotspot').forEach((btn) => {
+  btn.addEventListener('click', () => openShopDetail(btn.dataset.item));
+});
+btnShopDetailClose.addEventListener('click', () => {
+  selectedShopItemId = null;
+  shopDetailModal.classList.add('hidden');
+});
+btnShopBuy.addEventListener('click', () => {
+  if (!selectedShopItemId || !engine) return;
+  const res = engine.buyShopItem(selectedShopItemId);
+  if (res.ok) {
+    sound.sfxPowerUp(true);
+    syncShopUI();
+  }
+});
+
 btn1p.addEventListener('click', () => startMode(1));
 btn2p.addEventListener('click', () => startMode(2));
 
@@ -256,6 +386,7 @@ btnHudSound.addEventListener('click', () => {
 });
 
 btnHudPause.addEventListener('click', togglePause);
+btnHudExit.addEventListener('click', goToMenu);
 btnResume.addEventListener('click', togglePause);
 btnRestartLevel.addEventListener('click', () => {
   showOverlay(null);
@@ -269,15 +400,13 @@ btnRetry.addEventListener('click', () => {
 });
 btnGameoverMenu.addEventListener('click', goToMenu);
 
-btnPlayAgain.addEventListener('click', () => {
-  startMode(engine.mode);
-});
+btnPlayAgain.addEventListener('click', () => startMode(engine.mode));
 btnVictoryMenu.addEventListener('click', goToMenu);
 
 // Controles de teclado
 const GAME_KEYS = new Set([
   'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
-  'Digit1', 'Numpad1',
+  'Digit1', 'Numpad1', 'Digit2', 'Numpad2',
   'KeyA', 'KeyD', 'KeyW', 'KeyS', 'KeyF', 'KeyE',
   'Space',
 ]);
@@ -311,7 +440,7 @@ window.addEventListener('blur', () => {
 });
 
 // Controles táctiles para móvil/tablet PWA
-document.querySelectorAll('.touch-btn').forEach((btn) => {
+document.querySelectorAll('.touch-wood-btn[data-key]').forEach((btn) => {
   const code = btn.dataset.key;
   const press = (ev) => {
     ev.preventDefault();
@@ -326,6 +455,13 @@ document.querySelectorAll('.touch-btn').forEach((btn) => {
   btn.addEventListener('pointercancel', release);
   btn.addEventListener('pointerleave', release);
 });
+
+if (btnTouchInvis) {
+  btnTouchInvis.addEventListener('pointerdown', (ev) => {
+    ev.preventDefault();
+    if (engine) engine.activateInvisibility();
+  });
+}
 
 // Inicializar juego
 async function bootstrap() {
@@ -353,10 +489,9 @@ async function bootstrap() {
   });
 
   renderer = new GameRenderer(canvas, assets);
-
-  // Exponer una pequeña referencia útil para depuración
   window.__primosRaggi = engine;
 
+  syncShopUI();
   showOverlay(menuOverlay);
   syncSoundButtons();
   sound.playMusic('main');

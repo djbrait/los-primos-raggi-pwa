@@ -72,6 +72,16 @@ export function buildLevels() {
         { x: 2835, y: GROUND_Y - 210, content: 'random' },
         { x: 4210, y: GROUND_Y - 148, content: 'random' },
       ],
+      // Monedas de oro de la edad medieval para la tienda de Mia (50 c/u)
+      coins: [
+        { x: 260, y: GROUND_Y - 56 }, { x: 320, y: GROUND_Y - 56 }, { x: 545, y: GROUND_Y - 142 },
+        { x: 888, y: GROUND_Y - 184 }, { x: 1135, y: GROUND_Y - 118 }, { x: 1185, y: GROUND_Y - 118 },
+        { x: 1550, y: GROUND_Y - 156 }, { x: 1790, y: GROUND_Y - 215 }, { x: 2195, y: GROUND_Y - 108 },
+        { x: 2355, y: GROUND_Y - 168 }, { x: 2705, y: GROUND_Y - 156 }, { x: 3015, y: GROUND_Y - 192 },
+        { x: 3335, y: GROUND_Y - 115 }, { x: 3500, y: GROUND_Y - 180 }, { x: 3655, y: GROUND_Y - 125 },
+        { x: 4060, y: GROUND_Y - 168 }, { x: 4510, y: GROUND_Y - 128 }, { x: 4945, y: GROUND_Y - 146 },
+        { x: 5155, y: GROUND_Y - 198 }, { x: 5310, y: GROUND_Y - 56 },
+      ],
       // Enemigos: Mateos (caminan con espada) y Erins (vuelan y lanzan meteoritos)
       enemies: [
         { type: 'mateo', x: 670, y: GROUND_Y, minX: 615, maxX: 845 },
@@ -160,6 +170,15 @@ export function buildLevels() {
         { x: 2790, y: GROUND_Y - 210, content: 'random' },
         { x: 5435, y: GROUND_Y - 180, content: 'random' },
       ],
+      coins: [
+        { x: 230, y: GROUND_Y - 56 }, { x: 405, y: GROUND_Y - 138 }, { x: 730, y: GROUND_Y - 196 },
+        { x: 1055, y: GROUND_Y - 122 }, { x: 1120, y: GROUND_Y - 122 }, { x: 1475, y: GROUND_Y - 165 },
+        { x: 1735, y: GROUND_Y - 225 }, { x: 2085, y: GROUND_Y - 112 }, { x: 2240, y: GROUND_Y - 180 },
+        { x: 2385, y: GROUND_Y - 134 }, { x: 2685, y: GROUND_Y - 172 }, { x: 2965, y: GROUND_Y - 144 },
+        { x: 3240, y: GROUND_Y - 116 }, { x: 3390, y: GROUND_Y - 188 }, { x: 3545, y: GROUND_Y - 238 },
+        { x: 3980, y: GROUND_Y - 174 }, { x: 4230, y: GROUND_Y - 228 }, { x: 4505, y: GROUND_Y - 118 },
+        { x: 4665, y: GROUND_Y - 185 }, { x: 4825, y: GROUND_Y - 138 }, { x: 5650, y: GROUND_Y - 200 },
+      ],
       enemies: [
         { type: 'mateo', x: 540, y: GROUND_Y, minX: 475, maxX: 690 },
         { type: 'erin',  x: 1100, y: 195, minX: 880, maxX: 1450 },
@@ -239,8 +258,18 @@ export function buildLevels() {
       luckyBlocks: [
         { x: 575, y: GROUND_Y - 182, content: 'random' },
         { x: 3130, y: GROUND_Y - 220, content: 'random' },
-        // Un único LuckyBlock en la arena de Abruk (NO se recarga!)
-        { x: 5500, y: GROUND_Y - 275, content: 'random' },
+        // En la batalla contra Abruk: 2 LuckyBlocks que se recargan cada 20 segundos!
+        { x: 5500, y: GROUND_Y - 275, content: 'random', regenerates: true, regenTime: 20 },
+        { x: 6010, y: GROUND_Y - 275, content: 'random', regenerates: true, regenTime: 20 },
+      ],
+      coins: [
+        { x: 240, y: GROUND_Y - 56 }, { x: 445, y: GROUND_Y - 144 }, { x: 770, y: GROUND_Y - 206 },
+        { x: 1160, y: GROUND_Y - 128 }, { x: 1325, y: GROUND_Y - 186 }, { x: 1665, y: GROUND_Y - 160 },
+        { x: 1905, y: GROUND_Y - 215 }, { x: 2325, y: GROUND_Y - 120 }, { x: 2485, y: GROUND_Y - 192 },
+        { x: 2645, y: GROUND_Y - 142 }, { x: 3010, y: GROUND_Y - 190 }, { x: 3305, y: GROUND_Y - 146 },
+        { x: 3625, y: GROUND_Y - 122 }, { x: 3790, y: GROUND_Y - 200 }, { x: 3960, y: GROUND_Y - 145 },
+        { x: 4300, y: GROUND_Y - 56 }, { x: 4420, y: GROUND_Y - 56 }, { x: 4890, y: GROUND_Y - 132 },
+        { x: 6560, y: GROUND_Y - 56 }, { x: 6680, y: GROUND_Y - 56 },
       ],
       enemies: [
         { type: 'mateo', x: 580, y: GROUND_Y, minX: 515, maxX: 730 },

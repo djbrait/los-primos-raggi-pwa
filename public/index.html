@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./css/styles.css?v=6" />
+  <link rel="stylesheet" href="./css/styles.css?v=7" />
 </head>
 <body>
   <div id="game-shell">
@@ -29,98 +29,137 @@
       </div>
     </div>
 
-    <!-- PANTALLA DE INICIO -->
+    <!-- PANTALLA DE INICIO (Sobre el fondo animado del nivel) -->
     <div id="menu-overlay" class="overlay">
-      <div class="menu-stage">
-        <div class="menu-header">
-          <img src="./assets/logo.png" alt="Los Primos Raggi" class="menu-logo" />
-          <div class="menu-subtitle">¡Rescaten a Pepe de las garras de Abruk!</div>
+      <div class="menu-top-bar">
+        <div class="coin-pill">
+          <img src="./assets/sprites/coin_medieval.png" alt="Monedas" class="coin-pill-icon" />
+          <span id="menu-coins">0</span>
+        </div>
+        <button id="btn-install-pwa" class="mini-wood-btn hidden" type="button">📲 Instalar App</button>
+      </div>
+
+      <div class="menu-stage-v2">
+        <img src="./assets/logo.png" alt="Los Primos Raggi" class="menu-logo-top" />
+
+        <div class="menu-trio-row">
+          <img src="./assets/sprites/menu_lucio.png" alt="Lucio" class="menu-hero-crossed lucio-crossed" />
+
+          <div class="wood-plank-stack">
+            <button id="btn-open-play" class="plank-btn plank-green" type="button">Jugar</button>
+            <button id="btn-open-shop" class="plank-btn plank-gold" type="button">Tienda</button>
+            <button id="btn-menu-sound" class="plank-btn plank-blue" type="button">Música: SI</button>
+          </div>
+
+          <img src="./assets/sprites/menu_nacho.png" alt="Nacho" class="menu-hero-crossed nacho-crossed" />
+        </div>
+      </div>
+    </div>
+
+    <!-- SELECTOR 1 o 2 JUGADORES (al tocar Jugar) -->
+    <div id="mode-overlay" class="overlay">
+      <div class="wood-card modal-card mode-card">
+        <button id="btn-close-mode" class="close-x-btn" type="button" title="Volver">✕</button>
+        <h2>¿Cómo van a jugar?</h2>
+        <p class="modal-sub">Elijan 1 o 2 jugadores para comenzar</p>
+        <div class="mode-buttons">
+          <button id="btn-1p" class="wonder-btn btn-green" type="button">
+            <span class="btn-icon">🌟</span>
+            <span class="btn-copy">
+              <strong>1 JUGADOR</strong>
+              <small>Solo Lucio (Flechas · Espada: 1 · Invis: 2)</small>
+            </span>
+          </button>
+          <button id="btn-2p" class="wonder-btn btn-gold" type="button">
+            <span class="btn-icon">🤝</span>
+            <span class="btn-copy">
+              <strong>2 JUGADORES</strong>
+              <small>Lucio (Flechas, 1) + Nacho (A W S D, F)</small>
+            </span>
+          </button>
+        </div>
+        <div class="controls-mini-hint">
+          <span>PC: <b>2</b> activa Invisibilidad (si la compraste) · Protección se activa al empezar</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- TIENDA DE MIA -->
+    <div id="shop-overlay" class="overlay shop-overlay">
+      <div class="shop-scene">
+        <img src="./assets/bg/shop_mia.jpg" alt="Tienda de Mia" class="shop-bg-img" />
+
+        <div class="shop-top-bar">
+          <button id="btn-shop-back" class="mini-wood-btn" type="button">⬅ Volver</button>
+          <div class="coin-pill shop-coins-pill">
+            <img src="./assets/sprites/coin_medieval.png" alt="Monedas" class="coin-pill-icon" />
+            <span id="shop-coins">0</span>
+          </div>
         </div>
 
-        <div class="menu-center-row">
-          <div class="menu-hero-col hero-lucio">
-            <img src="./assets/sprites/lucio_win.png" alt="Lucio" class="hero-art lucio-art" />
-            <span class="hero-tag tag-lucio">Lucio (J1)</span>
-          </div>
-
-          <div class="wood-card menu-card">
-            <div class="mode-buttons">
-              <button id="btn-1p" class="wonder-btn btn-green" type="button">
-                <span class="btn-icon">🌟</span>
-                <span class="btn-copy">
-                  <strong>1 JUGADOR</strong>
-                  <small>Jugás solo con Lucio</small>
-                </span>
-              </button>
-              <button id="btn-2p" class="wonder-btn btn-gold" type="button">
-                <span class="btn-icon">🤝</span>
-                <span class="btn-copy">
-                  <strong>2 JUGADORES</strong>
-                  <small>Lucio (Flechas) + Nacho (A W S D)</small>
-                </span>
-              </button>
-            </div>
-
-            <div class="controls-grid">
-              <div class="control-box">
-                <div class="control-title">🟢 Lucio (J1)</div>
-                <div class="control-line"><kbd>←</kbd><kbd>→</kbd> Mover · <kbd>↑</kbd> Saltar / Volar</div>
-                <div class="control-line"><kbd>↓</kbd> Agacharse / Bajar · <kbd>1</kbd> Espada</div>
-              </div>
-              <div class="control-box">
-                <div class="control-title">🔵 Nacho (J2)</div>
-                <div class="control-line"><kbd>A</kbd><kbd>D</kbd> Mover · <kbd>W</kbd> Saltar / Volar</div>
-                <div class="control-line"><kbd>S</kbd> Agacharse / Bajar · <kbd>F</kbd> / <kbd>E</kbd> / <kbd>Espacio</kbd> Espada</div>
-              </div>
-            </div>
-
-            <div class="levels-preview">
-              <span class="level-pill">🌲 1. El Bosque</span>
-              <span class="level-pill">🏚️ 2. Aldea Abandonada</span>
-              <span class="level-pill">🌊 3. Fondo del Mar</span>
-              <span class="level-pill pill-boss">🦴 Jefe: Abruk</span>
-            </div>
-          </div>
-
-          <div class="menu-hero-col hero-nacho">
-            <img src="./assets/sprites/nacho_win.png" alt="Nacho" class="hero-art nacho-art" />
-            <span class="hero-tag tag-nacho">Nacho (J2)</span>
-          </div>
+        <!-- Zonas interactivas sobre los 3 objetos de la mesa -->
+        <div class="shop-hotspots">
+          <button class="shop-hotspot hs-life" data-item="life" type="button" aria-label="+1 Vida (500 monedas)">
+            <span id="badge-life" class="owned-badge">0/6</span>
+          </button>
+          <button class="shop-hotspot hs-invis" data-item="invis" type="button" aria-label="Invisibilidad (1000 monedas)">
+            <span id="badge-invis" class="owned-badge hidden">Comprado</span>
+          </button>
+          <button class="shop-hotspot hs-shield" data-item="shield" type="button" aria-label="Protección (2000 monedas)">
+            <span id="badge-shield" class="owned-badge hidden">Comprado</span>
+          </button>
         </div>
 
-        <div class="menu-footer-actions">
-          <button id="btn-menu-sound" class="mini-wood-btn" type="button">🔊 Música: Sí</button>
-          <button id="btn-install-pwa" class="mini-wood-btn hidden" type="button">📲 Instalar App</button>
+        <!-- Panel de descripción al tocar un objeto -->
+        <div id="shop-detail-modal" class="shop-detail-modal hidden">
+          <div class="wood-card shop-detail-card">
+            <button id="btn-shop-detail-close" class="close-x-btn" type="button" title="Salir">✕</button>
+            <h3 id="shop-detail-title">+1 Vida</h3>
+            <div class="shop-detail-price">
+              <img src="./assets/sprites/coin_medieval.png" alt="Moneda" class="coin-pill-icon" />
+              <span id="shop-detail-price-text">500</span>
+            </div>
+            <p id="shop-detail-desc" class="shop-detail-desc"></p>
+            <div id="shop-detail-status" class="shop-detail-status"></div>
+            <button id="btn-shop-buy" class="wonder-btn btn-green shop-buy-btn" type="button">Comprar</button>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- HUD EN PARTIDA -->
     <div id="hud" class="hud hidden">
-      <!-- Tarjeta Lucio (J1) -->
-      <div id="hud-p1" class="player-hud hud-lucio">
-        <div class="avatar-ring">
-          <img id="hud-p1-avatar" src="./assets/sprites/lucio_idle.png" alt="Lucio" />
-        </div>
-        <div class="player-stats">
-          <div class="player-top-row">
-            <span class="player-name">Lucio</span>
-            <div id="hud-p1-hearts" class="hearts-row">❤️❤️❤️</div>
+      <div class="hud-left-cluster">
+        <button id="btn-hud-exit" class="wood-exit-btn" type="button">⬅ Salir</button>
+        <!-- Tarjeta Lucio (J1) -->
+        <div id="hud-p1" class="player-hud hud-lucio">
+          <div class="avatar-ring">
+            <img id="hud-p1-avatar" src="./assets/sprites/lucio_idle.png" alt="Lucio" />
           </div>
-          <div class="hp-bar-wrap" title="Resistencia (15 golpes por corazón)">
-            <div class="hp-bar-bg">
-              <div id="hud-p1-hp" class="hp-bar-fill"></div>
+          <div class="player-stats">
+            <div class="player-top-row">
+              <span class="player-name">Lucio</span>
+              <div id="hud-p1-hearts" class="hearts-row">❤️❤️❤️</div>
             </div>
-            <span id="hud-p1-hp-text" class="hp-bar-text">15/15</span>
+            <div class="hp-bar-wrap" title="Resistencia (15 golpes por corazón)">
+              <div class="hp-bar-bg">
+                <div id="hud-p1-hp" class="hp-bar-fill"></div>
+              </div>
+              <span id="hud-p1-hp-text" class="hp-bar-text">15/15</span>
+            </div>
+            <div id="hud-p1-power" class="power-badge hidden"></div>
           </div>
-          <div id="hud-p1-power" class="power-badge hidden"></div>
         </div>
       </div>
 
-      <!-- Centro: Nivel, progreso y barra de jefe -->
+      <!-- Centro: Nivel, monedas, progreso y barra de jefe -->
       <div class="center-hud">
         <div class="level-banner-pill">
           <span id="hud-level-name">Nivel 1 · El Bosque</span>
+          <span class="hud-coin-counter">
+            <img src="./assets/sprites/coin_medieval.png" alt="Monedas" class="hud-coin-img" />
+            <span id="hud-coins">0</span>
+          </span>
           <div class="hud-icon-btns">
             <button id="btn-hud-sound" class="icon-btn" title="Sonido" type="button">🔊</button>
             <button id="btn-hud-pause" class="icon-btn" title="Pausa (P)" type="button">⏸️</button>
@@ -200,7 +239,7 @@
         <p id="victory-msg" class="modal-sub">¡Vencieron a Abruk y rescataron a Pepe! ¡Son unos campeones!</p>
         <div class="victory-trio">
           <img src="./assets/sprites/lucio_win.png" alt="Lucio" class="victory-lucio" />
-          <img src="./assets/sprites/pepe.png" alt="Pepe" class="victory-pepe" />
+          <img src="./assets/sprites/pepe_jump.png" alt="Pepe" class="victory-pepe" />
           <img id="victory-nacho-img" src="./assets/sprites/nacho_win.png" alt="Nacho" class="victory-nacho" />
         </div>
         <div class="modal-buttons">
@@ -210,26 +249,47 @@
       </div>
     </div>
 
-    <!-- CONTROLES TÁCTILES (solo pantallas touch) -->
+    <!-- CONTROLES TÁCTILES DE MADERA (para celulares y tablets, compactos) -->
     <div id="touch-controls" class="touch-controls hidden">
       <div class="touch-left">
-        <button class="touch-btn" data-key="ArrowLeft" type="button">◀</button>
-        <button class="touch-btn" data-key="ArrowDown" type="button">▼</button>
-        <button class="touch-btn" data-key="ArrowRight" type="button">▶</button>
+        <button class="touch-wood-btn" data-key="Digit1" type="button" title="Atacar">
+          <svg viewBox="0 0 24 24" class="touch-svg"><path d="M19.5 3.5L14 5l-5.5 5.5-2-2-1.5 1.5 2 2-3.5 3.5 1.5 1.5 3.5-3.5 2 2 1.5-1.5-2-2L15.5 6.5 19.5 3.5z"/></svg>
+        </button>
+        <button class="touch-wood-btn" data-key="ArrowLeft" type="button" title="Izquierda">
+          <svg viewBox="0 0 24 24" class="touch-svg"><path d="M15 5l-7 7 7 7V5z"/></svg>
+        </button>
+        <button class="touch-wood-btn" data-key="ArrowDown" type="button" title="Agacharse / Bajar">
+          <svg viewBox="0 0 24 24" class="touch-svg"><path d="M5 9l7 7 7-7H5z"/></svg>
+        </button>
+        <button class="touch-wood-btn" data-key="ArrowRight" type="button" title="Derecha">
+          <svg viewBox="0 0 24 24" class="touch-svg"><path d="M9 5l7 7-7 7V5z"/></svg>
+        </button>
       </div>
       <div class="touch-right">
-        <button class="touch-btn touch-attack" data-key="Digit1" type="button">⚔️</button>
-        <button class="touch-btn touch-jump" data-key="ArrowUp" type="button">▲</button>
+        <button id="btn-touch-invis" class="touch-wood-btn touch-invis-btn hidden" type="button" title="Invisibilidad">
+          <img src="./assets/sprites/icon_invis.png" alt="Invisibilidad" class="touch-bottle-img" />
+        </button>
+        <button class="touch-wood-btn touch-jump-btn" data-key="ArrowUp" type="button" title="Saltar / Volar">
+          <svg viewBox="0 0 24 24" class="touch-svg"><path d="M5 15l7-7 7 7H5z"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- AVISO DE ORIENTACIÓN VERTICAL PARA MÓVILES -->
+    <div id="rotate-overlay" class="rotate-overlay">
+      <div class="wood-card rotate-card">
+        <div class="rotate-icon">📱🔄</div>
+        <h2>Gira tu dispositivo</h2>
+        <p>Por favor, pon tu celular o tablet en <strong>horizontal</strong> para jugar a <strong>Los Primos Raggi</strong>.</p>
       </div>
     </div>
   </div>
 
   <script>
-    // Limpiar cachés viejos del Service Worker (v1..v5) para cargar siempre la última versión con música y teletransporte
     if ('caches' in window) {
-      caches.keys().then((keys) => keys.forEach((k) => { if (k !== 'primos-raggi-v6') caches.delete(k); }));
+      caches.keys().then((keys) => keys.forEach((k) => { if (k !== 'primos-raggi-v7') caches.delete(k); }));
     }
   </script>
-  <script type="module" src="./js/main.js?v=6"></script>
+  <script type="module" src="./js/main.js?v=7"></script>
 </body>
 </html>

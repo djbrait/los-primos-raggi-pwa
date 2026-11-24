@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="es-419">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#2e7d32" />
+  <meta name="description" content="Los Primos Raggi - Aventura 3D/2.5D estilo Mario Bros Wonder con Lucio y Nacho en español latino." />
+  <title>Los Primos Raggi</title>
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" type="image/png" href="./assets/icon-192.png" />
+  <link rel="apple-touch-icon" href="./assets/icon-192.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./css/styles.css?v=6" />
+</head>
+<body>
+  <div id="game-shell">
+    <canvas id="game-canvas" width="1280" height="720"></canvas>
+
+    <!-- PANTALLA DE CARGA -->
+    <div id="loading-overlay" class="overlay active">
+      <div class="wood-card loading-card">
+        <img src="./assets/logo.png" alt="Los Primos Raggi" class="loading-logo" />
+        <p class="loading-text">Cargando la aventura de los primos...</p>
+        <div class="loading-bar-track">
+          <div id="loading-bar-fill" class="loading-bar-fill"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANTALLA DE INICIO -->
+    <div id="menu-overlay" class="overlay">
+      <div class="menu-stage">
+        <div class="menu-header">
+          <img src="./assets/logo.png" alt="Los Primos Raggi" class="menu-logo" />
+          <div class="menu-subtitle">¡Rescaten a Pepe de las garras de Abruk!</div>
+        </div>
+
+        <div class="menu-center-row">
+          <div class="menu-hero-col hero-lucio">
+            <img src="./assets/sprites/lucio_win.png" alt="Lucio" class="hero-art lucio-art" />
+            <span class="hero-tag tag-lucio">Lucio (J1)</span>
+          </div>
+
+          <div class="wood-card menu-card">
+            <div class="mode-buttons">
+              <button id="btn-1p" class="wonder-btn btn-green" type="button">
+                <span class="btn-icon">🌟</span>
+                <span class="btn-copy">
+                  <strong>1 JUGADOR</strong>
+                  <small>Jugás solo con Lucio</small>
+                </span>
+              </button>
+              <button id="btn-2p" class="wonder-btn btn-gold" type="button">
+                <span class="btn-icon">🤝</span>
+                <span class="btn-copy">
+                  <strong>2 JUGADORES</strong>
+                  <small>Lucio (Flechas) + Nacho (A W S D)</small>
+                </span>
+              </button>
+            </div>
+
+            <div class="controls-grid">
+              <div class="control-box">
+                <div class="control-title">🟢 Lucio (J1)</div>
+                <div class="control-line"><kbd>←</kbd><kbd>→</kbd> Mover · <kbd>↑</kbd> Saltar / Volar</div>
+                <div class="control-line"><kbd>↓</kbd> Agacharse / Bajar · <kbd>1</kbd> Espada</div>
+              </div>
+              <div class="control-box">
+                <div class="control-title">🔵 Nacho (J2)</div>
+                <div class="control-line"><kbd>A</kbd><kbd>D</kbd> Mover · <kbd>W</kbd> Saltar / Volar</div>
+                <div class="control-line"><kbd>S</kbd> Agacharse / Bajar · <kbd>F</kbd> / <kbd>E</kbd> / <kbd>Espacio</kbd> Espada</div>
+              </div>
+            </div>
+
+            <div class="levels-preview">
+              <span class="level-pill">🌲 1. El Bosque</span>
+              <span class="level-pill">🏚️ 2. Aldea Abandonada</span>
+              <span class="level-pill">🌊 3. Fondo del Mar</span>
+              <span class="level-pill pill-boss">🦴 Jefe: Abruk</span>
+            </div>
+          </div>
+
+          <div class="menu-hero-col hero-nacho">
+            <img src="./assets/sprites/nacho_win.png" alt="Nacho" class="hero-art nacho-art" />
+            <span class="hero-tag tag-nacho">Nacho (J2)</span>
+          </div>
+        </div>
+
+        <div class="menu-footer-actions">
+          <button id="btn-menu-sound" class="mini-wood-btn" type="button">🔊 Música: Sí</button>
+          <button id="btn-install-pwa" class="mini-wood-btn hidden" type="button">📲 Instalar App</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- HUD EN PARTIDA -->
+    <div id="hud" class="hud hidden">
+      <!-- Tarjeta Lucio (J1) -->
+      <div id="hud-p1" class="player-hud hud-lucio">
+        <div class="avatar-ring">
+          <img id="hud-p1-avatar" src="./assets/sprites/lucio_idle.png" alt="Lucio" />
+        </div>
+        <div class="player-stats">
+          <div class="player-top-row">
+            <span class="player-name">Lucio</span>
+            <div id="hud-p1-hearts" class="hearts-row">❤️❤️❤️</div>
+          </div>
+          <div class="hp-bar-wrap" title="Resistencia (15 golpes por corazón)">
+            <div class="hp-bar-bg">
+              <div id="hud-p1-hp" class="hp-bar-fill"></div>
+            </div>
+            <span id="hud-p1-hp-text" class="hp-bar-text">15/15</span>
+          </div>
+          <div id="hud-p1-power" class="power-badge hidden"></div>
+        </div>
+      </div>
+
+      <!-- Centro: Nivel, progreso y barra de jefe -->
+      <div class="center-hud">
+        <div class="level-banner-pill">
+          <span id="hud-level-name">Nivel 1 · El Bosque</span>
+          <div class="hud-icon-btns">
+            <button id="btn-hud-sound" class="icon-btn" title="Sonido" type="button">🔊</button>
+            <button id="btn-hud-pause" class="icon-btn" title="Pausa (P)" type="button">⏸️</button>
+          </div>
+        </div>
+        <div id="hud-progress-wrap" class="progress-wrap">
+          <div id="hud-progress-fill" class="progress-fill"></div>
+          <span class="progress-end-icon" title="Tubo de madera">🪵</span>
+        </div>
+        <div id="hud-boss-wrap" class="boss-bar-wrap hidden">
+          <div class="boss-bar-title">🦴 ABRUK · JEFE FINAL</div>
+          <div class="boss-bar-track">
+            <div id="hud-boss-fill" class="boss-bar-fill"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tarjeta Nacho (J2) -->
+      <div id="hud-p2" class="player-hud hud-nacho hidden">
+        <div class="avatar-ring">
+          <img id="hud-p2-avatar" src="./assets/sprites/nacho_idle.png" alt="Nacho" />
+        </div>
+        <div class="player-stats">
+          <div class="player-top-row">
+            <span class="player-name">Nacho</span>
+            <div id="hud-p2-hearts" class="hearts-row">❤️❤️❤️</div>
+          </div>
+          <div class="hp-bar-wrap" title="Resistencia (15 golpes por corazón)">
+            <div class="hp-bar-bg">
+              <div id="hud-p2-hp" class="hp-bar-fill"></div>
+            </div>
+            <span id="hud-p2-hp-text" class="hp-bar-text">15/15</span>
+          </div>
+          <div id="hud-p2-power" class="power-badge hidden"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ANUNCIO DE EVENTOS / BANNER -->
+    <div id="toast-banner" class="toast-banner hidden"></div>
+
+    <!-- TRANSICIÓN DE TUBO DE MADERA -->
+    <div id="transition-curtain" class="transition-curtain">
+      <div id="transition-text" class="transition-text"></div>
+    </div>
+
+    <!-- PAUSA -->
+    <div id="pause-overlay" class="overlay">
+      <div class="wood-card modal-card">
+        <h2>⏸️ Juego en Pausa</h2>
+        <p class="modal-sub">¡Tómense un respiro, primos!</p>
+        <div class="modal-buttons">
+          <button id="btn-resume" class="wonder-btn btn-green" type="button">▶️ Continuar</button>
+          <button id="btn-restart-level" class="wonder-btn btn-gold" type="button">🔄 Reiniciar Nivel</button>
+          <button id="btn-pause-menu" class="wonder-btn btn-brown" type="button">🏠 Menú Principal</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- GAME OVER -->
+    <div id="gameover-overlay" class="overlay">
+      <div class="wood-card modal-card">
+        <h2 class="title-danger">💔 ¡Sin Vidas!</h2>
+        <p id="gameover-msg" class="modal-sub">¡No se rindan, Pepe los está esperando!</p>
+        <div class="modal-buttons">
+          <button id="btn-retry" class="wonder-btn btn-green" type="button">🔄 Reintentar Nivel</button>
+          <button id="btn-gameover-menu" class="wonder-btn btn-brown" type="button">🏠 Menú Principal</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- VICTORIA FINAL -->
+    <div id="victory-overlay" class="overlay">
+      <div class="wood-card victory-card">
+        <img src="./assets/logo.png" alt="Los Primos Raggi" class="victory-logo" />
+        <h2 class="title-victory">🎉 ¡SALVARON A PEPE! 🎉</h2>
+        <p id="victory-msg" class="modal-sub">¡Vencieron a Abruk y rescataron a Pepe! ¡Son unos campeones!</p>
+        <div class="victory-trio">
+          <img src="./assets/sprites/lucio_win.png" alt="Lucio" class="victory-lucio" />
+          <img src="./assets/sprites/pepe.png" alt="Pepe" class="victory-pepe" />
+          <img id="victory-nacho-img" src="./assets/sprites/nacho_win.png" alt="Nacho" class="victory-nacho" />
+        </div>
+        <div class="modal-buttons">
+          <button id="btn-play-again" class="wonder-btn btn-gold" type="button">🌟 Jugar de Nuevo</button>
+          <button id="btn-victory-menu" class="wonder-btn btn-brown" type="button">🏠 Menú Principal</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTROLES TÁCTILES (solo pantallas touch) -->
+    <div id="touch-controls" class="touch-controls hidden">
+      <div class="touch-left">
+        <button class="touch-btn" data-key="ArrowLeft" type="button">◀</button>
+        <button class="touch-btn" data-key="ArrowDown" type="button">▼</button>
+        <button class="touch-btn" data-key="ArrowRight" type="button">▶</button>
+      </div>
+      <div class="touch-right">
+        <button class="touch-btn touch-attack" data-key="Digit1" type="button">⚔️</button>
+        <button class="touch-btn touch-jump" data-key="ArrowUp" type="button">▲</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Limpiar cachés viejos del Service Worker (v1..v5) para cargar siempre la última versión con música y teletransporte
+    if ('caches' in window) {
+      caches.keys().then((keys) => keys.forEach((k) => { if (k !== 'primos-raggi-v6') caches.delete(k); }));
+    }
+  </script>
+  <script type="module" src="./js/main.js?v=6"></script>
+</body>
+</html>

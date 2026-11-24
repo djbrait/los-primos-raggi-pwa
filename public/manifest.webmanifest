@@ -1,0 +1,25 @@
+{
+  "name": "Los Primos Raggi",
+  "short_name": "Primos Raggi",
+  "description": "¡Acompaña a Lucio y Nacho en una aventura 3D/2.5D por el Bosque, la Aldea Abandonada y el Fondo del Mar para vencer a Abruk y salvar a Pepe!",
+  "lang": "es-419",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#132917",
+  "theme_color": "#2e7d32",
+  "icons": [
+    {
+      "src": "./assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

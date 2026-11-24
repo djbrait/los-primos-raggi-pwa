@@ -1,0 +1,11 @@
+{
+  "name": "los-primos-raggi-pwa",
+  "version": "1.0.0",
+  "description": "Los Primos Raggi - Videojuego de plataformas 2.5D estilo Mario Bros Wonder para 1 y 2 jugadores (Lucio y Nacho) en Español Latino.",
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "dev": "node server.mjs",
+    "test": "node tests/verify_49.mjs"
+  }
+}
